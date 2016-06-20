@@ -2365,7 +2365,7 @@ namespace Nop.Web.Controllers
         [ValidateInput(false)]
         [PublicAntiForgery]
         [HttpPost]
-        public ActionResult GetEstimateShipping(FormCollection form)
+        public ActionResult GetEstimateShipping(int? countryId, int? stateProvinceId, string zipPostalCode, FormCollection form)
         {
             var cart = _workContext.CurrentCustomer.ShoppingCartItems
                 .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
@@ -2375,22 +2375,7 @@ namespace Nop.Web.Controllers
             //parse and save checkout attributes
             ParseAndSaveCheckoutAttributes(cart, form);
 
-            int? countryId = null;
-            int? stateProvinceId = null;
-
-            if (form["CountryId"] != null)
-                countryId = int.Parse(form["CountryId"]);
-
-            if (form["StateProvinceId"] != null)
-                stateProvinceId = int.Parse(form["StateProvinceId"]);
-
-            var zipPostalCode = form["ZipPostalCode"];
-
-            var model = new ShoppingCartModel();
-            model.EstimateShipping.CountryId = countryId;
-            model.EstimateShipping.StateProvinceId = stateProvinceId;
-            model.EstimateShipping.ZipPostalCode = zipPostalCode;
-            PrepareShoppingCartModel(model, cart, setEstimateShippingDefaultAddress: false);
+            var model = new EstimateShippingResultModel();
 
             if (cart.RequiresShipping())
             {
@@ -2407,7 +2392,7 @@ namespace Nop.Web.Controllers
                 if (!getShippingOptionResponse.Success)
                 {
                     foreach (var error in getShippingOptionResponse.Errors)
-                        model.EstimateShipping.Warnings.Add(error);
+                        model.Warnings.Add(error);
                 }
                 else
                 {
@@ -2415,7 +2400,7 @@ namespace Nop.Web.Controllers
                     {
                         foreach (var shippingOption in getShippingOptionResponse.ShippingOptions)
                         {
-                            var soModel = new EstimateShippingModel.ShippingOptionModel
+                            var soModel = new EstimateShippingResultModel.ShippingOptionModel
                             {
                                 Name = shippingOption.Name,
                                 Description = shippingOption.Description,
@@ -2429,13 +2414,13 @@ namespace Nop.Web.Controllers
                             decimal rateBase = _taxService.GetShippingPrice(shippingTotal, _workContext.CurrentCustomer);
                             decimal rate = _currencyService.ConvertFromPrimaryStoreCurrency(rateBase, _workContext.WorkingCurrency);
                             soModel.Price = _priceFormatter.FormatShippingPrice(rate, true);
-                            model.EstimateShipping.ShippingOptions.Add(soModel);
+                            model.ShippingOptions.Add(soModel);
                         }
 
                         //pickup in store?
                         if (_shippingSettings.AllowPickUpInStore)
                         {
-                            var soModel = new EstimateShippingModel.ShippingOptionModel
+                            var soModel = new EstimateShippingResultModel.ShippingOptionModel
                             {
                                 Name = _localizationService.GetResource("Checkout.PickUpInStore"),
                                 Description = _localizationService.GetResource("Checkout.PickUpInStore.Description"),
@@ -2444,12 +2429,12 @@ namespace Nop.Web.Controllers
                             decimal rateBase = _taxService.GetShippingPrice(shippingTotal, _workContext.CurrentCustomer);
                             decimal rate = _currencyService.ConvertFromPrimaryStoreCurrency(rateBase, _workContext.WorkingCurrency);
                             soModel.Price = _priceFormatter.FormatShippingPrice(rate, true);
-                            model.EstimateShipping.ShippingOptions.Add(soModel);
+                            model.ShippingOptions.Add(soModel);
                         }
                     }
                     else
                     {
-                        model.EstimateShipping.Warnings.Add(_localizationService.GetResource("Checkout.ShippingIsNotAllowed"));
+                        model.Warnings.Add(_localizationService.GetResource("Checkout.ShippingIsNotAllowed"));
                     }
                 }
             }

@@ -1,9 +1,9 @@
-﻿@model ShoppingCartModel
+﻿@model EstimateShippingResultModel
 @using Nop.Web.Models.ShoppingCart;
-@if (Model.EstimateShipping.ShippingOptions.Count > 0)
+@if (Model.ShippingOptions.Count > 0)
             {
     <ul class="shipping-results">
-        @foreach (var shippingOption in Model.EstimateShipping.ShippingOptions)
+        @foreach (var shippingOption in Model.ShippingOptions)
         {
             <li class="shipping-option-item">
                 <strong class="option-name">
